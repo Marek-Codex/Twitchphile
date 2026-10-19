@@ -1,0 +1,65 @@
+<!doctype html>
+<!-- Hosts Twitch's official embed player. Served from https://twitchphile.local/ (a WebView2 virtual host), which is
+     the domain Twitch's `parent` check requires.
+     The app loads this page once and keeps it: play(channel) switches channel in place through Twitch's player API
+     (no page or player reload), stop() pauses. That's what makes opening a stream near-instant after the first. -->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <!-- Warm the connections the player needs before the first play(). -->
+  <link rel="preconnect" href="https://player.twitch.tv" />
+  <link rel="preconnect" href="https://embed.twitch.tv" />
+  <link rel="preconnect" href="https://gql.twitch.tv" />
+  <link rel="preconnect" href="https://usher.ttvnw.net" crossorigin />
+  <link rel="dns-prefetch" href="https://video-weaver.ttvnw.net" />
+  <style>
+    html, body, #p, #p iframe { margin: 0; width: 100%; height: 100%; border: 0; background: #000; overflow: hidden; }
+  </style>
+  <link rel="preconnect" href="https://player.kick.com" />
+  <script src="https://player.twitch.tv/js/embed/v1.js"></script>
+</head>
+<body>
+  <div id="p"></div>
+  <script>
+    let player = null;
+    let fallback = null;
+    let kick = null; // Kick's embed, for "kick/<name>" channels (no player API: one iframe, reloaded per channel)
+
+    // Called by the app. The first call creates the player; later calls just change channel.
+    window.play = (channel) => {
+      if (channel.toLowerCase().startsWith("kick/")) {
+        player?.pause();
+        if (fallback) fallback.src = "about:blank";
+        kick ??= document.body.appendChild(Object.assign(document.createElement("iframe"), { allow: "autoplay; fullscreen", allowFullscreen: true }));
+        kick.style.cssText = "position:fixed;inset:0;width:100%;height:100%;border:0";
+        kick.src = `https://player.kick.com/${encodeURIComponent(channel.slice(5))}?autoplay=true&muted=false`;
+        return;
+      }
+      if (kick) kick.src = "about:blank", kick.style.display = "none";
+      if (window.Twitch?.Player) {
+        if (!player) {
+          player = new Twitch.Player("p", { channel, parent: [location.hostname], autoplay: true, muted: false, width: "100%", height: "100%" });
+        } else {
+          player.setChannel(channel);
+          player.play();
+        }
+        return;
+      }
+      // Embed script unavailable: plain player iframe (reloads per channel, but still works).
+      fallback ??= document.getElementById("p").appendChild(Object.assign(document.createElement("iframe"), { allow: "autoplay; fullscreen", allowFullscreen: true }));
+      fallback.src = `https://player.twitch.tv/?channel=${encodeURIComponent(channel)}&parent=${location.hostname}&autoplay=true&muted=false`;
+    };
+
+    // Called when the card collapses: stop sound and download without throwing the player away.
+    window.stop = () => {
+      if (player) player.pause();
+      if (fallback) fallback.src = "about:blank";
+      if (kick) kick.src = "about:blank", kick.style.display = "none";
+    };
+
+    // Old-style direct link (player.html?channel=x) still works.
+    const initial = new URLSearchParams(location.search).get("channel");
+    if (initial) window.play(initial);
+  </script>
+</body>
+</html>

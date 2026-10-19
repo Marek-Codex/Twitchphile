@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Package manifest for the installable .msix (built with -p:GenerateAppxPackageOnBuild=true).
+  The same project still builds a plain unpackaged exe by default; the app detects package identity at
+  runtime (PackageInfo) and uses the protocol + "start with Windows" declared here only when installed
+  from this package. Publisher must match the signing certificate's subject exactly.
+-->
+<Package
+    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+    xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+    xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+    xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+    xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+    xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+    IgnorableNamespaces="uap uap3 desktop desktop6 com rescap">
+
+  <Identity Name="MarekCodex.Plexus.Twitchphile" Publisher="CN=MarekCodex" Version="0.4.0.0" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Twitchphile</DisplayName>
+    <PublisherDisplayName>Marek Codex</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Be there for every stream you care about — favourites, the moment they go live, and a companion to the Twitchphile browser extension.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="Twitchphile.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+          AppListEntry="none"
+          DisplayName="Twitchphile"
+          Description="Be there for every stream you care about."
+          BackgroundColor="transparent"
+          Square150x150Logo="Assets\Square150x150Logo.png"
+          Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile
+            Wide310x150Logo="Assets\Wide310x150Logo.png"
+            Square310x310Logo="Assets\Square310x310Logo.png"
+            Square71x71Logo="Assets\Square71x71Logo.png">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo" />
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- twitchphile: links (the extension's "Start app" button). Opening one just starts or shows the app. -->
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="twitchphile">
+            <uap:DisplayName>Twitchphile</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+
+        <!-- Windows launches Twitchphile.exe with an "AppNotificationActivated" argument when a go-live toast
+             is clicked and the app isn't running; App.xaml.cs reads that back through AppInstance. -->
+        <desktop:Extension Category="windows.toastNotificationActivation">
+          <desktop:ToastNotificationActivation ToastActivatorCLSID="4C3728C4-F63E-4045-BDB7-5B9D06FC1479" />
+        </desktop:Extension>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="Twitchphile.exe" DisplayName="Twitchphile" Arguments="----AppNotificationActivated:">
+              <com:Class Id="4C3728C4-F63E-4045-BDB7-5B9D06FC1479" DisplayName="Twitchphile notification activator" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+
+        <!-- "Start with Windows". Starts disabled; the Settings toggle turns it on (Services/Startup.cs). -->
+        <desktop:Extension Category="windows.startupTask" Executable="Twitchphile.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="TwitchphileStartup" Enabled="false" DisplayName="Twitchphile" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Full-trust desktop app (tray icon, loopback pairing listener, WebView2 player). -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

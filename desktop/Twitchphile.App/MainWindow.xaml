@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Twitchphile.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Twitchphile.App"
+    Title="Twitchphile">
+    <Window.SystemBackdrop><MicaBackdrop Kind="BaseAlt" /></Window.SystemBackdrop>
+
+    <Grid Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar" Title="Twitchphile" Subtitle="Your favourites, live.">
+            <TitleBar.IconSource><ImageIconSource ImageSource="ms-appx:///Assets/twitchphile-icon.png" /></TitleBar.IconSource>
+        </TitleBar>
+
+        <!-- View switcher + actions -->
+        <Grid Grid.Row="1" Margin="12,0,12,6" ColumnSpacing="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <SelectorBar x:Name="Views" SelectionChanged="Views_SelectionChanged">
+                <SelectorBarItem x:Name="LiveTab" Text="Live" IsSelected="True">
+                    <SelectorBarItem.Icon><FontIcon Glyph="&#xE768;" /></SelectorBarItem.Icon>
+                </SelectorBarItem>
+                <SelectorBarItem x:Name="FollowingTab" Text="Following">
+                    <SelectorBarItem.Icon><FontIcon Glyph="&#xE716;" /></SelectorBarItem.Icon>
+                </SelectorBarItem>
+                <SelectorBarItem x:Name="DropsTab" Text="Drops">
+                    <SelectorBarItem.Icon><FontIcon Glyph="&#xE7B8;" /></SelectorBarItem.Icon>
+                </SelectorBarItem>
+            </SelectorBar>
+            <Button x:Name="RefreshButton" Grid.Column="1" Style="{StaticResource SubtleButtonStyle}" ToolTipService.ToolTip="Check now" Click="Refresh_Click">
+                <FontIcon Glyph="&#xE72C;" FontSize="14" />
+            </Button>
+            <Button Grid.Column="2" Style="{StaticResource SubtleButtonStyle}" ToolTipService.ToolTip="Settings">
+                <FontIcon Glyph="&#xE713;" FontSize="14" />
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedRight">
+                        <StackPanel Width="300" Spacing="10">
+                            <TextBlock Text="[ WHEN THEY GO LIVE ]" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <ToggleSwitch x:Name="NotifyToggle" Header="Notification" Toggled="Settings_Toggled" />
+                            <ToggleSwitch x:Name="PriorityToggle" Header="Let it through Do Not Disturb" Toggled="Settings_Toggled" />
+                            <HyperlinkButton Padding="0" Content="Allow it in Windows settings…" Click="OpenNotificationSettings_Click"
+                                             ToolTipService.ToolTip="Windows only lets urgent notifications through Do Not Disturb for apps you allow." />
+                            <TextBlock Text="[ LIVE LIST ]" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <NumberBox x:Name="PollBox" Header="Check every (minutes)" Minimum="1" Maximum="15" SpinButtonPlacementMode="Compact" ValueChanged="Poll_Changed" />
+                            <TextBlock Text="[ APP ]" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <ToggleSwitch x:Name="StartupToggle" Header="Start with Windows" Toggled="Settings_Toggled" />
+                            <ToggleSwitch x:Name="TrayToggle" Header="Close to tray (keep watching)" Toggled="Settings_Toggled" />
+                            <TextBlock Text="[ ACCOUNT ]" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <Grid>
+                                <TextBlock x:Name="AccountText" VerticalAlignment="Center" Text="Not signed in" />
+                                <Button x:Name="SignOutButton" HorizontalAlignment="Right" Content="Sign out" Click="SignOut_Click" />
+                            </Grid>
+                            <TextBlock Text="[ BROWSER EXTENSION ]" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <TextBlock x:Name="PairingText" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Button Content="Add to your browser…" Click="SetUpExtension_Click" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </Grid>
+
+        <!-- Sign-in -->
+        <ScrollViewer x:Name="SignInPanel" Grid.Row="2" Visibility="Collapsed">
+            <Border Margin="12" Padding="16" VerticalAlignment="Top" Background="{StaticResource PlexusCardBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="14">
+                <StackPanel Spacing="12">
+                    <Border HorizontalAlignment="Left" Padding="8,3" Background="{StaticResource PlexusAccentSoftBrush}" CornerRadius="9">
+                        <TextBlock x:Name="SignInBadge" Foreground="{StaticResource PlexusAccentBrush}" FontSize="12" FontWeight="SemiBold" Text="NOT CONNECTED" />
+                    </Border>
+                    <TextBlock TextWrapping="Wrap" Text="Connect your Twitch account to see who you follow, pick favourites, and get a heads-up the moment they go live." />
+                    <Button x:Name="ConnectButton" HorizontalAlignment="Stretch" Style="{StaticResource AccentButtonStyle}" Content="Connect Twitch" Click="Connect_Click" />
+                    <StackPanel x:Name="CodePanel" Spacing="8" Visibility="Collapsed">
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Text="Approve Twitchphile on Twitch. Your code:" />
+                        <TextBlock x:Name="CodeText" HorizontalAlignment="Center" FontFamily="Consolas" FontSize="30" FontWeight="SemiBold"
+                                   CharacterSpacing="200" Foreground="{StaticResource PlexusAccentBrush}" IsTextSelectionEnabled="True" />
+                        <Button x:Name="OpenActivateButton" HorizontalAlignment="Stretch" Content="Open twitch.tv/activate" Click="OpenActivate_Click" />
+                        <TextBlock x:Name="SignInStatus" Foreground="{ThemeResource TextFillColorTertiaryBrush}" FontSize="12" TextWrapping="Wrap" Text="Waiting for you to approve…" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <!-- Live: favourites who are live. Click a card to watch inline. -->
+        <Grid x:Name="LivePanel" Grid.Row="2">
+            <ListView x:Name="LiveList" Padding="8,0,8,8" SelectionMode="None" IsItemClickEnabled="True" ItemClick="LiveList_ItemClick" PointerEntered="LiveList_PointerEntered">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Padding" Value="4,3" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:LiveItem">
+                        <Border Padding="10" Background="{StaticResource PlexusCardBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="14">
+                            <StackPanel Spacing="10">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Avatar with a mint live ring; hover it to peek at what's on screen. -->
+                                    <Grid Width="52" Height="52" VerticalAlignment="Top">
+                                        <ToolTipService.ToolTip>
+                                            <Image Source="{x:Bind Thumb, Mode=OneWay}" Width="320" Height="180" Stretch="UniformToFill" />
+                                        </ToolTipService.ToolTip>
+                                        <Ellipse Stroke="{StaticResource PlexusMintBrush}" StrokeThickness="2" />
+                                        <PersonPicture Width="44" Height="44" DisplayName="{x:Bind Name, Mode=OneWay}" ProfilePicture="{x:Bind Avatar, Mode=OneWay}" />
+                                    </Grid>
+                                    <StackPanel Grid.Column="1" Spacing="3">
+                                        <Grid>
+                                            <TextBlock Margin="0,0,64,0" Text="{x:Bind Name, Mode=OneWay}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" />
+                                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Spacing="5">
+                                                <Ellipse Width="7" Height="7" VerticalAlignment="Center" Fill="{StaticResource PlexusMintBrush}" />
+                                                <TextBlock Text="{x:Bind Viewers, Mode=OneWay}" FontSize="12" FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <TextBlock Text="{x:Bind Game, Mode=OneWay}" FontSize="12" Foreground="{StaticResource PlexusAccentBrush}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                                        <!-- Uptime, language and a few tags as small pills. -->
+                                        <StackPanel Margin="0,4,0,0" Orientation="Horizontal" Spacing="4">
+                                            <Border Padding="7,2" CornerRadius="8" Background="{StaticResource PlexusAccentSoftBrush}">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon Glyph="&#xE823;" FontSize="10" Foreground="{StaticResource PlexusAccentBrush}" />
+                                                    <TextBlock Text="{x:Bind Uptime, Mode=OneWay}" FontSize="11" Foreground="{StaticResource PlexusAccentBrush}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <ItemsControl ItemsSource="{x:Bind Pills, Mode=OneWay}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <Border Padding="7,2" CornerRadius="8" Background="{StaticResource PlexusCardBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                                            <TextBlock Text="{x:Bind}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <!-- Expanded: the shared player moves into this card; playback starts on click. -->
+                                <StackPanel Spacing="8" Visibility="{x:Bind local:Format.Show(IsExpanded), Mode=OneWay}">
+                                    <Border x:Name="PlayerHost" CornerRadius="8" Background="Black" Height="{x:Bind local:MainWindow.PlayerHeight}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <HyperlinkButton Tag="{x:Bind Login}" Click="OpenChannel_Click"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE8A7;" FontSize="12" /><TextBlock Text="Channel" /></StackPanel></HyperlinkButton>
+                                        <HyperlinkButton Tag="{x:Bind Login}" Click="OpenChat_Click"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE8BD;" FontSize="12" /><TextBlock Text="Chat" /></StackPanel></HyperlinkButton>
+                                        <HyperlinkButton Tag="{x:Bind Login}" Click="OpenVods_Click"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE714;" FontSize="12" /><TextBlock Text="VODs" /></StackPanel></HyperlinkButton>
+                                        <HyperlinkButton Tag="{x:Bind Login}" Click="OpenClips_Click"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE8A5;" FontSize="12" /><TextBlock Text="Clips" /></StackPanel></HyperlinkButton>
+                                        <HyperlinkButton Tag="{x:Bind Login}" Click="OpenStats_Click"><StackPanel Orientation="Horizontal" Spacing="6"><FontIcon Glyph="&#xE9D9;" FontSize="12" /><TextBlock Text="Stats" /></StackPanel></HyperlinkButton>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <StackPanel x:Name="LiveEmpty" VerticalAlignment="Center" Margin="32" Spacing="6" Visibility="Collapsed">
+                <FontIcon Glyph="&#xE734;" FontSize="28" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock x:Name="LiveEmptyText" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Drops: campaign progress, as the paired extension reads it from twitch.tv. -->
+        <Grid x:Name="DropsPanel" Grid.Row="2" Visibility="Collapsed">
+            <ListView x:Name="DropsList" Padding="8,0,8,8" SelectionMode="None">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Padding" Value="4,3" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:DropCampaignItem">
+                        <Border Padding="12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="{x:Bind Art}" Width="39" Height="54" VerticalAlignment="Top" Stretch="UniformToFill" />
+                                <StackPanel Grid.Column="1" Spacing="8">
+                                    <StackPanel>
+                                        <TextBlock Text="{x:Bind Title}" Style="{ThemeResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{x:Bind Subtitle}" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{x:Bind Drops}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:DropItem">
+                                                <StackPanel Spacing="3" Margin="0,0,0,6">
+                                                    <Grid>
+                                                        <TextBlock Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" Margin="0,0,100,0" />
+                                                        <TextBlock Text="{x:Bind Status}" HorizontalAlignment="Right" Style="{ThemeResource CaptionTextBlockStyle}"
+                                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                    </Grid>
+                                                    <ProgressBar Value="{x:Bind Percent}" Maximum="100" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <StackPanel x:Name="DropsEmpty" VerticalAlignment="Center" Margin="32" Spacing="6">
+                <FontIcon Glyph="&#xE7B8;" FontSize="28" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock x:Name="DropsEmptyText" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Drop progress comes from the browser extension. Pair it, and keep a Twitch tab open while logged in." />
+            </StackPanel>
+        </Grid>
+
+        <!-- Following: everyone you follow, live first like the extension popup. Star anyone, live or not. -->
+        <Grid x:Name="FollowingPanel" Grid.Row="2" Visibility="Collapsed" RowSpacing="6">
+            <Grid.Resources>
+                <local:FollowTemplateSelector x:Key="FollowTemplates">
+                    <local:FollowTemplateSelector.Header>
+                        <DataTemplate x:DataType="local:FollowHeader">
+                            <TextBlock Margin="4,10,0,2" Text="{x:Bind Text}" Style="{StaticResource CaptionTextBlockStyle}" CharacterSpacing="80"
+                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                        </DataTemplate>
+                    </local:FollowTemplateSelector.Header>
+                    <local:FollowTemplateSelector.Live>
+                        <DataTemplate x:DataType="local:FollowItem">
+                            <Grid Padding="8" ColumnSpacing="10" Background="{StaticResource PlexusCardBrush}" CornerRadius="10" Opacity="{x:Bind RowOpacity}">
+                                <Grid.ContextFlyout><MenuFlyout><MenuFlyoutItem Text="{x:Bind HideText}" Tag="{x:Bind}" Click="Hide_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xED1A;" /></MenuFlyoutItem.Icon></MenuFlyoutItem></MenuFlyout></Grid.ContextFlyout>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Width="42" Height="42" VerticalAlignment="Top">
+                                    <Ellipse Stroke="{StaticResource PlexusMintBrush}" StrokeThickness="2" />
+                                    <PersonPicture Width="35" Height="35" DisplayName="{x:Bind Name}" ProfilePicture="{x:Bind Avatar}" />
+                                </Grid>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <Grid>
+                                        <TextBlock Margin="0,0,56,0" Text="{x:Bind Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE7B3;" FontSize="11" Foreground="{StaticResource PlexusMintBrush}" />
+                                            <TextBlock Text="{x:Bind Viewers}" FontSize="12" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="{x:Bind Game}" FontSize="12" Foreground="{StaticResource PlexusAccentBrush}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{x:Bind Title}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2,0,0">
+                                        <FontIcon Glyph="&#xE823;" FontSize="10" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock Text="{x:Bind Uptime}" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <Button Grid.Column="2" VerticalAlignment="Center" Style="{StaticResource SubtleButtonStyle}" Tag="{x:Bind}" Click="Star_Click" ToolTipService.ToolTip="Favourite">
+                                    <FontIcon Glyph="{x:Bind StarGlyph, Mode=OneWay}" FontSize="16" Foreground="{StaticResource PlexusAccentBrush}" />
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </local:FollowTemplateSelector.Live>
+                    <local:FollowTemplateSelector.Offline>
+                        <DataTemplate x:DataType="local:FollowItem">
+                            <Grid Padding="8,4" ColumnSpacing="10" Background="Transparent" Opacity="{x:Bind RowOpacity}">
+                                <Grid.ContextFlyout><MenuFlyout><MenuFlyoutItem Text="{x:Bind HideText}" Tag="{x:Bind}" Click="Hide_Click"><MenuFlyoutItem.Icon><FontIcon Glyph="&#xED1A;" /></MenuFlyoutItem.Icon></MenuFlyoutItem></MenuFlyout></Grid.ContextFlyout>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <PersonPicture Width="30" Height="30" Opacity="0.7" DisplayName="{x:Bind Name}" ProfilePicture="{x:Bind Avatar}" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind Name}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                <Button Grid.Column="2" VerticalAlignment="Center" Style="{StaticResource SubtleButtonStyle}" Tag="{x:Bind}" Click="Star_Click" ToolTipService.ToolTip="Favourite">
+                                    <FontIcon Glyph="{x:Bind StarGlyph, Mode=OneWay}" FontSize="16" Foreground="{StaticResource PlexusAccentBrush}" />
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </local:FollowTemplateSelector.Offline>
+                </local:FollowTemplateSelector>
+            </Grid.Resources>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid Margin="12,0" ColumnSpacing="6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <AutoSuggestBox x:Name="SearchBox" PlaceholderText="Search who you follow · right-click to hide" QueryIcon="Find" TextChanged="Search_TextChanged" />
+                <DropDownButton Grid.Column="1" ToolTipService.ToolTip="Sort">
+                    <FontIcon Glyph="&#xE8CB;" FontSize="14" />
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                            <RadioMenuFlyoutItem x:Name="SortLive" Text="Live first" GroupName="sort" Click="Sort_Click" />
+                            <RadioMenuFlyoutItem x:Name="SortName" Text="A–Z" GroupName="sort" Click="Sort_Click" />
+                            <RadioMenuFlyoutItem x:Name="SortRecent" Text="Recently followed" GroupName="sort" Click="Sort_Click" />
+                            <MenuFlyoutSeparator />
+                            <ToggleMenuFlyoutItem x:Name="ShowHiddenItem" Text="Show hidden channels" Click="ShowHidden_Click" />
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+            </Grid>
+            <ListView x:Name="FollowList" Grid.Row="1" Padding="8,0,8,8" SelectionMode="None" ItemTemplateSelector="{StaticResource FollowTemplates}">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Padding" Value="2,2" />
+                        <Setter Property="MinHeight" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
+        </Grid>
+
+        <TextBlock x:Name="Footer" Grid.Row="3" Margin="14,4,14,10" FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" />
+    </Grid>
+</Window>

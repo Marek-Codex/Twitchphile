@@ -1,0 +1,95 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>Twitchphile.App</RootNamespace>
+    <AssemblyName>Twitchphile</AssemblyName>
+    <Product>Plexus Twitchphile</Product>
+    <Version>0.4.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\twitchphile.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsAppSdkDeploymentManagerInitialize>false</WindowsAppSdkDeploymentManagerInitialize>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <!-- XamlCompiler otherwise keeps a shared-state server alive between builds, which can wedge and then fail
+         with exit code 1 and no message at all (family lesson from Stretto). -->
+    <ForceSharedStateShutdown>true</ForceSharedStateShutdown>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+
+    <!-- Single-project MSIX (family convention, like Stretto). By default this project builds a plain,
+         unpackaged exe: `dotnet build` stays fast, cert-free and CI-green, and the MSIX packaging tasks never
+         run. Pass -p:GenerateAppxPackageOnBuild=true to also emit an installable .msix. The app detects package
+         identity at runtime (PackageInfo) and uses the protocol + "start with Windows" declared in
+         Package.appxmanifest only when installed from that package, so the SAME build works loose or installed
+         — and the browser extension pairs with either. -->
+    <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+    <EnableMsixTooling Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">true</EnableMsixTooling>
+    <AppxPackage Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">true</AppxPackage>
+    <AppxBundle>never</AppxBundle>
+    <!-- Headless/CI runners have no mspdbcmf.exe; symbol packaging fails there without this. -->
+    <AppxSymbolPackageEnabled Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">false</AppxSymbolPackageEnabled>
+    <!-- Signing is opt-in on top of packaging: pass -p:AppxPackageSigningEnabled=true with a cert (local dev uses
+         the dev key; CI generates a throwaway one). Unsigned packages still build, which validates the manifest. -->
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <AppxAutoIncrementPackageRevision>false</AppxAutoIncrementPackageRevision>
+
+    <!-- Versions of the two packages the MSIX workaround target below depends on, kept here so the
+         PackageReferences and the target's copy path can't drift apart. -->
+    <MsixSspVersion>8.0.0</MsixSspVersion>
+    <MsixBuildToolsVersion>1.7.260930100</MsixBuildToolsVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1721" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">
+    <!-- The MSIX packaging tasks (WinAppSdkValidateAppxManifestItems et al.) need this assembly on .NET 9/10;
+         without it the build fails with a FileNotFoundException for System.Security.Permissions 8.0.0. Pulled in
+         only when packaging, so the plain unpackaged build (and CI's default build) never restores it. -->
+    <PackageReference Include="System.Security.Permissions" Version="$(MsixSspVersion)" />
+    <!-- WindowsAppSDK 1.8 pulls BuildTools.MSIX 1.7.20250829.1 transitively, whose packaging task host can't
+         resolve System.Security.Permissions under the .NET 10 SDK. Pinning the newer build fixes that; leave the
+         default (plain exe) build on the transitive version so it stays untouched. -->
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" Version="$(MsixBuildToolsVersion)" />
+  </ItemGroup>
+
+  <!--
+    Workaround for a .NET 10 SDK bug: MSBuild's task host no longer probes a task's own folder for its
+    dependencies, so the MSIX packaging task (loaded from BuildTools.MSIX .../tools/net6.0) can't find
+    System.Security.Permissions and the build dies with a FileNotFoundException. Copying that DLL next to the
+    task assembly fixes it. Doing it here (rather than a manual cache edit) keeps the fix in-repo and repeatable
+    on a clean machine and on CI. Only runs when packaging, so the plain build is untouched.
+  -->
+  <Target Name="CopySspNextToMsixPackagingTask"
+          BeforeTargets="_ValidatePresenceOfAppxManifestItems"
+          Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">
+    <PropertyGroup>
+      <_SspDll>$(NuGetPackageRoot)system.security.permissions/$(MsixSspVersion)/lib/net6.0/System.Security.Permissions.dll</_SspDll>
+      <_MsixTaskDir>$(NuGetPackageRoot)microsoft.windows.sdk.buildtools.msix/$(MsixBuildToolsVersion)/tools/net6.0/</_MsixTaskDir>
+    </PropertyGroup>
+    <Copy SourceFiles="$(_SspDll)" DestinationFolder="$(_MsixTaskDir)" Condition="Exists('$(_SspDll)') and Exists('$(_MsixTaskDir)')" ContinueOnError="true" />
+  </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Twitchphile.Core\Twitchphile.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\twitchphile.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\twitchphile-icon.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\player.html" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The Chromium extension is copied by extension/build.mjs on every build — single source of truth. -->
+    <!-- Firefox takes the packed add-on (the setup dialog drags this one in). -->
+    <Content Include="..\..\extension\dist\twitchphile-firefox.xpi" CopyToOutputDirectory="PreserveNewest" Link="twitchphile-firefox.xpi" Condition="Exists('..\..\extension\dist\twitchphile-firefox.xpi')" />
+  </ItemGroup>
+</Project>

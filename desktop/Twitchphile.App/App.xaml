@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="Twitchphile.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Plexus family palette (see PLEXUS-ICON-LANGUAGE.md): blue = subject, mint = live, navy = structure. -->
+            <Color x:Key="PlexusAccentColor">#FF3CA0FF</Color>
+            <SolidColorBrush x:Key="PlexusAccentBrush" Color="{StaticResource PlexusAccentColor}" />
+            <SolidColorBrush x:Key="PlexusAccentSoftBrush" Color="#263CA0FF" />
+            <SolidColorBrush x:Key="PlexusMintBrush" Color="#FF47D7B2" />
+            <SolidColorBrush x:Key="PlexusNavyBrush" Color="#FF0C2745" />
+            <SolidColorBrush x:Key="PlexusCardBrush" Color="#12FFFFFF" />
+            <SolidColorBrush x:Key="PlexusOnAccentBrush" Color="#FF07131F" />
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FF3CA0FF" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#FF52ABFF" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#FF2784D8" />
+            <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#FF07131F" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

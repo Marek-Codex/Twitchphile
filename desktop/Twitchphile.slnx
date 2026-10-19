@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Twitchphile.Core/Twitchphile.Core.csproj" />
+  <Project Path="Twitchphile.Tests/Twitchphile.Tests.csproj" />
+  <Project Path="Twitchphile.App/Twitchphile.App.csproj">
+    <Platform Solution="*|*" Project="x64" />
+  </Project>
+</Solution>

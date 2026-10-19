@@ -1,0 +1,87 @@
+{
+  "manifest_version": 3,
+  "name": "Twitchphile",
+  "description": "Be there for every stream you care about — and watch it the way Twitch should have built it.",
+  "permissions": [
+    "storage",
+    "identity",
+    "alarms",
+    "tabs",
+    "downloads",
+    "notifications",
+    "idle"
+  ],
+  "host_permissions": [
+    "*://*.twitch.tv/*",
+    "https://api.twitch.tv/*",
+    "https://id.twitch.tv/*",
+    "https://gql.twitch.tv/*",
+    "http://127.0.0.1:9616/*",
+    "https://kick.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Twitchphile",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.twitch.tv/*"
+      ],
+      "js": [
+        "sniff.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.twitch.tv/*"
+      ],
+      "js": [
+        "page.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.twitch.tv/*",
+        "*://kick.com/*",
+        "*://*.kick.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "panel.js",
+        "fonts/*",
+        "icons/*"
+      ],
+      "matches": [
+        "*://*.twitch.tv/*",
+        "*://kick.com/*",
+        "*://*.kick.com/*"
+      ]
+    }
+  ],
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "minimum_chrome_version": "120",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwy/9ley9LWoXddn1AVVxAi1YPZl3HFzbtMlJnRn4Dy94dKiBXTVkhDpT0OSa+QYIw0OVhAarXRH8gdtDy7BcLQ2lNQkLH/72uPp5YyplN+w1XIOSSJLbGbB5S1bTDBSEkgobve6HwRuXv2G8uSjqW/Nh4h6f8WLfzJwLn2TqcJ2YzHMGRY9fX9Z3/Alsoh/bC6BUgtudICNNVLyLs2J7FSdy55irg1ic4KAqs0xYDvvbvMvsXCvWB0c0GlNpb0Q8Zuq6Hqv5+g/cMCNs3duB9YYhb/y6MervaLkvBLCbp6LUisA0HYP0JdXX3KnGvgr3hgP+fUHxSK/3MelB4HXS9QIDAQAB"
+}

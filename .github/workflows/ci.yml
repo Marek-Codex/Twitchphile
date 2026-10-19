@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  desktop:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build desktop solution
+        run: dotnet build desktop/Twitchphile.slnx --configuration Release
+
+      - name: Run desktop tests
+        run: dotnet test desktop/Twitchphile.Tests/Twitchphile.Tests.csproj --configuration Release --no-restore --no-build
+
+      - name: Validate MSIX package builds (unsigned)
+        run: dotnet build desktop/Twitchphile.App/Twitchphile.App.csproj --configuration Release -p:GenerateAppxPackageOnBuild=true
+
+  extension:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      - name: Install extension dependencies
+        run: npm install
+        working-directory: extension
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: extension
+
+      - name: Run extension tests
+        run: npm test
+        working-directory: extension
+
+      - name: Build extension (Chromium + Firefox)
+        run: npm run build
+        working-directory: extension
